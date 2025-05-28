@@ -26,7 +26,7 @@ CaRay 是一個基於 OpenAI Realtime API 與 n8n 打造的即時語音客服專
 
 ### 🔁 整體流程圖
 
-> ![image.png](attachment:266957fc-6b9d-48c7-93c8-7f594bbdb9da:image.png)  
+> ![image.png](流程圖.png)  
 > *(請將圖片上傳至您的 GitHub Repo 並更新此處連結)*
 
 ### 操作流程說明
@@ -80,7 +80,7 @@ CaRay 是一個基於 OpenAI Realtime API 與 n8n 打造的即時語音客服專
 
 ### 🔹 Main Flow
 
-> ![Main Flow n8n](attachment:dabaffca-f305-4252-b4ce-86607aed4f82:image.png)  
+> ![Main Flow n8n](Main_flow.png)  
 > *(請將圖片上傳至您的 GitHub Repo 並更新此處連結)*
 
 此流程是整個即時語音客服的核心，負責處理與 OpenAI Realtime API 的初始設定、提供前端互動介面，並管理整個對話的生命週期。
@@ -109,7 +109,7 @@ CaRay 是一個基於 OpenAI Realtime API 與 n8n 打造的即時語音客服專
 
 ### 🔹 Save Flow
 
-> ![Save Flow n8n](attachment:8531b8b0-c84a-4601-8cf7-640944098d6c:image.png)  
+> ![Save Flow n8n](Save_flow.png)  
 > *(請將圖片上傳至您的 GitHub Repo 並更新此處連結)*
 
 此流程作為一個簡單的後端 API，用於接收並儲存由 Main Flow 前端 `SaveData` function 傳來的對話資訊。
