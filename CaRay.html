@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NanoAI RT</title>
+  <style>
+.container {
+  background-color: #ffffff;
+  text-align: left;
+  padding: 16px;
+  border-radius: 8px;
+}
+.msg {
+    padding: 5px;
+    background-color: #eee;
+}
+.msgUsr {
+    padding: 5px;
+    background-color: #e4eefd;
+}
+.curMsg {
+    padding: 5px;
+    background-color: #e6ffd9;
+}
+h1 {
+    margin: 5px;
+    font-size: 20px;
+}
+</style>
+</head>
+<body>
+  <H1>Let's talk!</H1>
+  <div class="container">
+    <div class="messages"></div>
+    <div class="curMsg"></div>
+    <div id="statusLog" style="background:#f0f0f0;padding:10px;margin-top:10px;font-family:monospace;font-size:14px;border:1px solid #ccc;">
+      <strong>Status Log:</strong><br/>
+    </div>
+  </div>
+<script>
+
+let micTrack = null;
+let isRecording = false;
+let dc;
+let pc; // <--- 提升 pc 作用域
+let ms; // <--- 提升 ms 作用域
+
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space" && !isRecording) {
+    e.preventDefault();
+    isRecording = true;
+    if (micTrack) micTrack.enabled = true;
+    appendStatusLog("🎤 開始收音");
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  if (e.code === "Space" && isRecording) {
+    e.preventDefault();
+    isRecording = false;
+    if (micTrack) micTrack.enabled = false;
+    appendStatusLog("🛑 停止收音");
+  }
+});
+
+function appendStatusLog(text) {
+  const log = document.getElementById("statusLog");
+  const line = document.createElement("div");
+  const timestamp = `[${new Date().toLocaleTimeString("zh-TW", { hour12: false })}] `;
+  if (text.includes("<pre>")) {
+    line.innerHTML = timestamp + text;
+  } else {
+    line.textContent = timestamp + text;
+  }
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function init() {
+  const EPHEMERAL_KEY = "{{ $json.client_secret.value }}";
+  pc = new RTCPeerConnection(); // <--- 賦值給全局 pc
+
+  const audioEl = document.createElement("audio");
+  audioEl.autoplay = true;
+  pc.ontrack = e => audioEl.srcObject = e.streams[0];
+
+  try {
+    ms = await navigator.mediaDevices.getUserMedia({ audio: true }); // <--- 賦值給全局 ms
+    micTrack = ms.getTracks()[0];
+    micTrack.enabled = false;
+    pc.addTrack(micTrack);
+  } catch (err) {
+    appendStatusLog(`❌ 無法取得麥克風權限: ${err.message}`);
+    return;
+  }
+
+  dc = pc.createDataChannel("oai-events");
+  dc.addEventListener("message", (e) => {
+    handleResponse(e);
+  });
+
+  dc.onopen = () => appendStatusLog("🔗 DataChannel 已開啟");
+  dc.onclose = () => appendStatusLog("🚪 DataChannel 已關閉 (外部事件或 EndSession)");
+
+
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    const baseUrl = "https://api.openai.com/v1/realtime";
+    const model = "gpt-4o-realtime-preview-2024-12-17";
+    const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+      method: "POST",
+      body: offer.sdp,
+      headers: {
+        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+        "Content-Type": "application/sdp"
+      },
+    });
+
+    if (!sdpResponse.ok) {
+        const errorText = await sdpResponse.text();
+        throw new Error(`SDP 交換失敗: ${sdpResponse.status} ${errorText}`);
+    }
+
+    const answer = {
+      type: "answer",
+      sdp: await sdpResponse.text(),
+    };
+    await pc.setRemoteDescription(answer);
+    appendStatusLog("🚀 Realtime 連線已建立");
+
+  } catch (err) {
+    appendStatusLog(`❌ 初始化 Realtime 連線失敗: ${err.message}`);
+  }
+}
+
+function handleResponse(e) {
+  const obj = JSON.parse(e.data);
+  appendStatusLog(`📥 Received event: ${obj.type}`);
+
+  if (obj.type === 'response.audio_transcript.done') {
+    appendStatusLog(`🤖 AI 最終語音稿: ${obj.transcript}`);
+    document.querySelector('.curMsg').innerHTML = "";
+    document.querySelector('.messages').innerHTML += `<div class='msg'>AI: ${obj.transcript}</div><br/>`;
+  }
+
+  if (obj.type === 'conversation.item.input_audio_transcription.completed') {
+    appendStatusLog(`👤 使用者最終語音稿: ${obj.transcript}`);
+    document.querySelector('.curMsg').innerHTML = "";
+    document.querySelector('.messages').innerHTML += `<div class='msgUsr'>User: ${obj.transcript}</div><br/>`;
+  }
+
+  if (obj.type === 'response.audio_transcript.delta' || obj.type === 'conversation.item.input_audio_transcription.delta') {
+    document.querySelector('.curMsg').innerHTML += obj.delta;
+  }
+
+  if (obj.type === "response.function_call_arguments.done") {
+    appendStatusLog(`🧪 function_call_arguments.done 的完整物件：<pre>${JSON.stringify(obj, null, 2)}</pre>`);
+
+    const toolName = obj.name;
+    const argsStr = obj.arguments;
+    const callIdForTool = obj.call_id;
+    let args;
+
+    try {
+      args = JSON.parse(argsStr);
+    } catch (parseError) {
+      appendStatusLog(`❌ 解析 arguments 失敗: ${parseError.message}`);
+      args = {};
+      if (dc && dc.readyState === "open") {
+        dc.send(JSON.stringify({
+          type: "conversation.item.create",
+          item: {
+            type: "function_call_output",
+            call_id: callIdForTool,
+            output: JSON.stringify({ error: `Failed to parse arguments: ${parseError.message}` })
+          }
+        }));
+      }
+      return;
+    }
+
+    appendStatusLog(`📞 GPT 要呼叫工具：${toolName}，參數：${argsStr}`);
+
+    async function fakeKYCFunction(id) {
+        const itemsString = `{{ JSON.stringify($("Google Sheets").all()) }}`;
+        let items = [];
+        try {
+            items = JSON.parse(itemsString);
+            if (!Array.isArray(items)) throw new Error("Google Sheets data is not an array.");
+        } catch (err) {
+            appendStatusLog(`❌ 解析 Google Sheets 資料失敗: ${err.message}`);
+            return { id, error: true, message: `無法讀取 KYC 資料來源: ${err.message}` };
+        }
+
+        try {
+          if (!id) throw new Error("KYC 查詢請提供 id");
+          const rows = items.map(item => item.json || item);
+          const matched = rows.find(row => String(row.id).trim() === String(id).trim());
+
+          if (!matched) {
+            throw new Error(`找不到 ID 為 ${id} 的 KYC 資料`);
+          }
+          return {
+            id: matched.id,
+            name: matched["姓名"], 
+            school: matched["就讀國小"],
+            hobby: matched["興趣"],
+            siblings: matched["幾個兄弟姊妹"],
+            info: "使用者 KYC 資料成功取得"
+          };
+        } catch (err) {
+          return { id, error: true, message: err.message };
+        }
+    }
+
+    async function fakeInfoSender(id, intention) { // 如果您還需要這個工具
+      appendStatusLog(`ℹ️ 模擬 info_sender: id=${id}, intention=${intention}`);
+      return { id, status: "sent", intention, message: "資訊已模擬發送" };
+    }
+
+    (async () => {
+      let resultForAI = {}; // 初始化，確保所有分支都有賦值
+
+      try {
+        if (toolName === "KYC_info_retriever") {
+          resultForAI = await fakeKYCFunction(args.id);
+        } else if (toolName === "SaveData") {
+          appendStatusLog(`➡️ 準備將數據發送到 n8n 以執行 SaveData...`);
+          if (!args.id || !args.intention || !args.intention_classified) {
+            const missingParams = [];
+            if (!args.id) missingParams.push("id");
+            if (!args.intention) missingParams.push("intention");
+            if (!args.intention_classified) missingParams.push("intention_classified");
+            const errorMessage = `SaveData 缺少必要參數: ${missingParams.join(", ")}`;
+            appendStatusLog(`❌ ${errorMessage}`);
+            resultForAI = { error: true, message: errorMessage };
+          } else {
+            const saveDataPayload = {
+              id: args.id,
+              intention: args.intention,
+              intention_classified: args.intention_classified
+            };
+            const n8nWebhookUrl = "https://mmbcolab.app.n8n.cloud/webhook/SaveData"; // 使用生產 URL
+            try {
+              const response = await fetch(n8nWebhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(saveDataPayload),
+              });
+              if (!response.ok) {
+                const errorText = await response.text();
+                appendStatusLog(`❌ n8n Webhook 錯誤: ${response.status} - ${errorText}`);
+                resultForAI = { error: true, message: `n8n Webhook 處理失敗: ${response.status}` };
+              } else {
+                appendStatusLog(`✅ 數據已成功發送到 n8n Webhook.`);
+                resultForAI = {
+                  status: "success",
+                  message: "資料已成功記錄。",
+                  details_sent_to_n8n: saveDataPayload
+                };
+              }
+            } catch (networkError) {
+              appendStatusLog(`❌ 發送數據到 n8n Webhook 時網絡錯誤: ${networkError.message}`);
+              resultForAI = { error: true, message: `無法連接到 n8n 服務: ${networkError.message}` };
+            }
+          }
+        } else if (toolName === "EndSession") {
+          appendStatusLog("🔄 正在執行 EndSession 工具...");
+
+          // 嘗試向 AI 返回工具執行成功的消息 (在關閉 dc 之前)
+          if (dc && dc.readyState === "open") {
+            dc.send(JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                type: "function_call_output",
+                call_id: callIdForTool,
+                output: JSON.stringify({ status: "session_ended", message: "Session termination initiated by EndSession tool." })
+              }
+            }));
+            appendStatusLog("📤 已嘗試回傳 EndSession 工具結果給 Assistant");
+          } else {
+            appendStatusLog("⚠️ DataChannel 未開啟，無法回傳 EndSession 工具結果給 Assistant");
+          }
+          
+          // 關閉 DataChannel
+          if (dc && dc.readyState === "open") { // 再次檢查，以防上面發送時狀態改變
+            dc.close();
+            appendStatusLog("🚪 DataChannel 已主動關閉 (by EndSession)");
+          } else if (dc) {
+            appendStatusLog(`🚪 DataChannel 狀態: ${dc.readyState} (未主動關閉 by EndSession)`);
+          }
+
+
+          // 關閉 RTCPeerConnection
+          if (pc) {
+            pc.close();
+            appendStatusLog("🔌 RTCPeerConnection 已主動關閉 (by EndSession)");
+          }
+
+          // 停止本地媒體軌道
+          if (ms && typeof ms.getTracks === 'function') {
+            ms.getTracks().forEach(track => track.stop());
+            appendStatusLog("🎤 本地媒體軌道 (ms) 已停止 (by EndSession)");
+          } else if (micTrack && typeof micTrack.stop === 'function') {
+            micTrack.stop();
+            appendStatusLog("🎤 本地媒體軌道 (micTrack) 已停止 (by EndSession)");
+          }
+          
+          appendStatusLog("🏁 服務結束 (EndSession tool 執行完畢)");
+          resultForAI = { status: "session_ended_locally", message: "Local resources released." }; // 這個結果主要用於本地日誌，因為 dc 可能已關閉
+
+          // 可選：檢查 WebRTC 連接狀態，用於調試
+          if (pc && (pc.connectionState === "disconnected" ||
+              pc.connectionState === "closed" ||
+              pc.connectionState === "failed")) {
+            appendStatusLog("✅ WebRTC 連接狀態確認：已中斷/關閉。");
+          } else if (pc) {
+            appendStatusLog(`⚠️ WebRTC 連接狀態: ${pc.connectionState} (可能未立即完全關閉)`);
+          }
+
+        } else { // 處理未知工具
+          appendStatusLog(`❓ 未知的工具名稱: ${toolName}`);
+          resultForAI = { error: true, message: `未知的工具名稱: ${toolName}`, tool_name: toolName };
+        }
+
+        // --- 向 AI Assistant 回傳工具執行結果 (除了 EndSession，它已在內部處理) ---
+        if (toolName !== "EndSession") {
+          appendStatusLog(`🛠 ${toolName} 工具執行結果 (準備回傳給AI)：${JSON.stringify(resultForAI)}`);
+          if (dc && dc.readyState === "open") {
+            dc.send(JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                type: "function_call_output",
+                call_id: callIdForTool,
+                output: JSON.stringify(resultForAI)
+              }
+            }));
+            appendStatusLog(`📤 已回傳 ${toolName} 工具結果 (call_id: ${callIdForTool}) 給 Assistant`);
+          } else {
+            appendStatusLog(`❌ DataChannel 未開啟，無法回傳 ${toolName} 工具結果 (call_id: ${callIdForTool})`);
+          }
+        }
+
+      } catch (toolExecutionError) {
+        appendStatusLog(`❌ 工具執行或回傳時發生嚴重錯誤: ${toolExecutionError.message}. Stack: ${toolExecutionError.stack}`);
+        if (dc && dc.readyState === "open") { // 仍然嘗試通過開放的 dc 回傳錯誤
+          dc.send(JSON.stringify({
+            type: "conversation.item.create",
+            item: {
+              type: "function_call_output",
+              call_id: callIdForTool,
+              output: JSON.stringify({ error: true, message: `工具執行期間發生內部錯誤: ${toolExecutionError.message}` })
+            }
+          }));
+          appendStatusLog(`📤 已回傳工具執行嚴重錯誤 (call_id: ${callIdForTool}) 給 Assistant`);
+        }
+      }
+    })();
+  }
+
+  if (obj.type === "response.output_item.done") {
+    const content = obj.content?.text;
+    if (content) {
+      document.querySelector('.curMsg').innerHTML = "";
+      document.querySelector('.messages').innerHTML += `<div class='msg'>AI: ${content}</div><br/>`;
+      appendStatusLog(`🗣️ AI 最終回應內容: ${content}`);
+    }
+  }
+
+  if (obj.type === "output_audio_buffer.stopped"){
+    // 根據您的流程決定這裡是否需要操作
+  }
+
+  if (obj.type === "error") {
+    appendStatusLog(`❌ 發生 API 錯誤：<pre>${JSON.stringify(obj, null, 2)}</pre>`);
+  }
+}
+
+init().catch(err => {
+  appendStatusLog(`❌ 初始化過程中發生未捕獲的錯誤: ${err.message}`);
+});
+
+</script>
+</body>
+</html>

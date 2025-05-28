@@ -1,0 +1,122 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "SaveData",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "id": "216dbbd8-b50a-47ef-b674-0b597521697b",
+        "name": "Webhook",
+        "webhookId": "6c860f44-336b-4be6-b03f-e7ff10d200fe"
+      },
+      {
+        "parameters": {
+          "operation": "appendOrUpdate",
+          "documentId": {
+            "__rl": true,
+            "value": "1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE",
+            "mode": "list",
+            "cachedResultName": "CaRay_Database",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 951341161,
+            "mode": "list",
+            "cachedResultName": "對話紀錄",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE/edit#gid=951341161"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $json.body['id']}}",
+              "intention": "={{ $json.body['intention'] }}",
+              "intention_classified": "={{ $json.body['intention_classified'] }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "intention",
+                "displayName": "intention",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "intention_classified",
+                "displayName": "intention_classified",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.6,
+        "position": [
+          240,
+          0
+        ],
+        "id": "23c29159-2185-4dab-aa51-845294f2fa2f",
+        "name": "Google Sheets",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "fHa95vTbuJa2sg59",
+            "name": "Google Sheets account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Google Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Sheets": {
+        "main": [
+          []
+        ]
+      }
+    },
+    "pinData": {},
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "443d770b8fbd0d03299451806f3877dce0456e3ee5aa3f8ac4c390b5cf216dee"
+    }
+  }

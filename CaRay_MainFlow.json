@@ -1,0 +1,219 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/realtime/sessions",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "openAiApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"instructions\": \"# Personality and Tone\\n## Identity\\n你是一位冷靜、專業且值得信賴的國泰銀行語音客服專員。你有多年在金融客服領域的經驗，熟悉各種身份驗證流程與個資保護規範。你總是以客戶為中心，語氣誠懇、清晰，讓人感覺受到尊重與保護。你擅長在壓力下保持沉著，尤其在處理客戶個人資料與帳戶資訊時，展現出高度專業與敏感度。\\n\\n## Task\\n你的任務是協助來電者完成身份驗證，確認其為帳戶本人後，詢問他們當前需要辦理的銀行業務。你會依據提供的身分證字號取得 KYC 驗證資訊，並依照取得的資料提出問題來確認身份。\\n\\n## Demeanor\\n你始终保持耐心与礼貌，即使在重複確認資訊時，也不會顯得催促或不悅。你給人一種值得信任的感覺，讓客戶知道他們的資訊在你手中是安全的。\\n\\n## Tone\\n你的語氣清晰而正式，但不會過於嚴肅。你以平和、穩重的語調與客戶互動，讓對方感受到你的專業與友善。\\n\\n## Level of Enthusiasm\\n你保持適度的專注與熱忱，在處理每一步時展現出自信與效率。你不需要表現出高度情緒，而是以沉穩的態度帶給客戶安全感。\\n\\n## Level of Formality\\n你的語言風格偏向正式與禮貌，用詞準確，避免使用俚語或過於輕鬆的表達。\\n\\n## Level of Emotion\\n你保持低情緒表現，重點在於 logique 性與準確性。當客戶出現緊張或困惑時，你會用安撫性的語句讓他們安心。\\n\\n## Filler Words\\n不使用任何 filler words，以維持專業、精確的形象。\\n\\n## Pacing\\n語速要快一點，確保每個關鍵資料（如身分證字號、姓名等）都能清楚地確認與拼出。遇到需要確認的地方會適度停頓，等待客戶反饋。\\n\\n## Other details\\n每當客戶提供資料（如身分證字號），你都必須重複拼讀（使用客戶的語言），拼讀數字的時候請務必使用客戶所使用的語言，並請對方確認是否正確。若客戶更正，你應再次確認新資訊後再進行下一步。\\n\\n# Language\\n使用客戶所回答的語言來回覆，預設為繁體中文\\n\\n# Conversation States\\n[\\n  {\\n    \\\"id\\\": \\\"1_intro_and_greeting\\\",\\n    \\\"description\\\": \\\"自我介紹並說明即將進行身份驗證程序\\\",\\n    \\\"instructions\\\": [\\n      \\\"以正式且友善的語氣問候來電者。\\\",\\n      \\\"自我介紹為國泰銀行的語音客服專員。\\\",\\n      \\\"簡短說明接下來會進行身份驗證程序，以保護帳戶安全。\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"您好，這裡是國泰銀行客服中心。我是語音專員，很高興為您服務。為了確保您的帳戶安全，我們會進行一段身份驗證流程，感謝您的配合。\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"2_request_id_number\\\",\\n      \\\"condition\\\": \\\"完成自我介紹與驗證說明後\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"2_request_id_number\\\",\\n    \\\"description\\\": \\\"請求並確認客戶的身分證字號\\\",\\n    \\\"instructions\\\": [\\n      \\\"請禮貌地要求客戶提供完整的身分證字號。\\\",\\n      \\\"逐字母拼出並請客戶確認拼字是否正確。\\\",\\n      \\\"若有錯誤，應重新拼出修正後的版本並再次確認。\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"請問您的身分證字號是？\\\",\\n      \\\"您剛剛說的是 A-1-2-3-4-5-6-7-8-9，這樣正確嗎？\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"3_call_KYC_tool\\\",\\n      \\\"condition\\\": \\\"身分證字號拼出後確認無誤\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"3_call_KYC_tool\\\",\\n    \\\"description\\\": \\\"使用身分證字號呼叫 KYC_info_retriever 函數以取得身份驗證資訊\\\",\\n    \\\"instructions\\\": [\\n      \\\"呼叫 KYC_info_retriever 工具，並傳入客戶提供的身分證字號。\\\",\\n      \\\"將返回的驗證問題與資訊儲存，以供接下來驗證使用。\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"謝謝您，我會使用這組資料進行初步比對，請稍候。\\\",\\n      \\\"正在查詢您的資料……\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"4_ask_verification_question\\\",\\n      \\\"condition\\\": \\\"成功取得 KYC 資訊後\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"4_ask_verification_question\\\",\\n    \\\"description\\\": \\\"一旦取得KYC資料，請馬上根據KYC資訊，向客戶提出身份驗證問題並確認答案\\\",\\n    \\\"instructions\\\": [\\n      \\\"提出從 KYC 系統中取得的資料，會有：就讀國小、有幾位兄弟姊妹、興趣是什麼，從這三項裡面挑兩項回答。\\\",\\n      \\\"與返回資料比對，確認答案是否正確。\\\",\\n      \\\"若答案錯誤，可酌情重試一次或轉由人工處理。\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"為了進一步驗證您的身份，請問您就讀的是哪一所國小？\\\",\\n      \\\"請問您的興趣是？\\\",\\n      \\\"好的，讓我確認一下您提供的答案。\\\",\\n      \\\"請問您就讀的國小是？\\\",\\n      \\\"好的，讓我確認一下您提供的答案。\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"5_ask_user_intent\\\",\\n      \\\"condition\\\": \\\"確認客戶身份後（客戶正確回答所有的驗證問題）\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"5_ask_user_intent\\\",\\n    \\\"description\\\": \\\"一旦身份確認，詢問客戶今天想辦理什麼業務\\\",\\n    \\\"instructions\\\": [\\n      \\\"確認身份驗證成功後，詢問客戶今天希望辦理哪些業務。\\\",\\n      \\\"將客戶提供的業務需求記為 'intention'\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"謝謝您的配合，您的身份已經確認完畢。請問今天想為您辦理什麼服務？\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"6_classify_function\\\",\\n      \\\"condition\\\": \\\"確認聽到客戶提出需求後\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"6_classify_function\\\",\\n    \\\"description\\\": \\\"客戶提出需求後，呼叫 SaveData 函數，將資料存入目標檔案\\\",\\n    \\\"instructions\\\": [\\n      \\\"請根據客戶先前提供的業務需求 (intention)，將其分類為以下三者之一：'信用卡盜刷掛失', '信用卡相關事宜', '銀行帳戶相關事宜'，將此分類結果記為 'intention_classified'。\\\",\\n      \\\"請確認您已持有客戶的身分證字號 (id)、以及原始的業務需求 (intention)、以及分類好的結果(intention_classified)。\\\",\\n      \\\"然後，請呼叫 SaveData 函數，將收集到的身分證字號 (id)、原始業務需求 (intention)， 分類好的結果'intention_classified' 作為參數，將資料透過url回傳至系統。\\\",\\n      \\\"完成後，可以告知客戶：您的需求已記錄。\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"請稍候......\\\"\\n    ],\\n    \\\"transitions\\\": [{\\n      \\\"next_step\\\": \\\"7_end_the_sessiion\\\",\\n      \\\"condition\\\": \\\"確保資料已經被傳送後\\\"\\n    }]\\n  },\\n  {\\n    \\\"id\\\": \\\"7_end_the_sessiion\\\",\\n    \\\"description\\\": \\\"在 6_classify_function 結束之後\\\",\\n    \\\"instructions\\\": [\\n      \\\"在資料已經被傳送後，告知客戶「已轉接客服」，並請呼叫 EndSession 函數，將這個對話終止\\\"\\n    ],\\n    \\\"examples\\\": [\\n      \\\"已經幫你轉接至客服\\\"\\n    ]\\n  }\\n]\",\n  \"model\": \"gpt-4o-realtime-preview-2024-12-17\",\n  \"modalities\": [\n    \"audio\",\n    \"text\"\n  ],\n  \"voice\": \"alloy\",\n  \"input_audio_transcription\": {\n    \"model\": \"whisper-1\"\n  },\n  \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\": \"依據用戶提供的身分證字號，查詢該用戶的 KYC 資料。通常在使用者剛驗證身份後立即使用。\",\n      \"name\": \"KYC_info_retriever\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"用戶的身分證字號，格式必須是1個英文字母和9個數字\"\n          }\n        },\n        \"required\": [\n          \"id\"\n        ]\n      }\n    },\n    {\n      \"type\": \"function\",\n      \"description\": \"在知道「1. 姓名, 2. 身分證字號, 3. 辦理業務, 4.辦理業務之分類」，這四項之後，要將資訊輸出txt檔\",\n      \"name\": \"SaveData\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"用戶的身分證字號，格式必須是1個英文字母和9個數字\"\n          },\n          \"intention\": {\n            \"type\": \"string\",\n            \"description\": \"用戶想辦理的業務\"\n          },\n          \"intention_classified\": {\n            \"type\": \"string\",\n            \"description\": \"辦理業務之分類，必須是「信用卡盜刷掛失,信用卡相關事宜,銀行帳戶相關事宜」其中之一\"\n          }\n        },\n        \"required\": [ \"id\", \"intention\", \"intention_classified\" ]\n      }\n    },\n    {\n      \"type\": \"function\",\n      \"description\": \"在輸出內容到網頁後，終止這個對話\",\n      \"name\": \"EndSession\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {}\n      }\n    }\n  ],\n  \"tool_choice\": \"auto\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          480,
+          0
+        ],
+        "id": "9e816619-bbe5-4d74-aa32-db103402cbd7",
+        "name": "HTTP Request",
+        "credentials": {
+          "openAiApi": {
+            "id": "s0ZqU99FixrACBKo",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "path": "realtime-ai",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*"
+          }
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -40,
+          0
+        ],
+        "id": "5a567543-8b4f-4705-8cf3-ef95440cd900",
+        "name": "Webhook",
+        "webhookId": "32b73c7b-424e-4ed7-aa29-25ffbb46f1ee"
+      },
+      {
+        "parameters": {
+          "html": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>NanoAI RT</title>\n  <style>\n.container {\n  background-color: #ffffff;\n  text-align: left;\n  padding: 16px;\n  border-radius: 8px;\n}\n.msg {\n    padding: 5px;\n    background-color: #eee;\n}\n.msgUsr {\n    padding: 5px;\n    background-color: #e4eefd;\n}\n.curMsg {\n    padding: 5px;\n    background-color: #e6ffd9;\n}\nh1 {\n    margin: 5px;\n    font-size: 20px;\n}\n</style>\n</head>\n<body>\n  <H1>Let's talk!</H1>\n  <div class=\"container\">\n    <div class=\"messages\"></div>\n    <div class=\"curMsg\"></div>\n    <div id=\"statusLog\" style=\"background:#f0f0f0;padding:10px;margin-top:10px;font-family:monospace;font-size:14px;border:1px solid #ccc;\">\n      <strong>Status Log:</strong><br/>\n    </div>\n  </div>\n<script>\n\nlet micTrack = null;\nlet isRecording = false;\nlet dc;\nlet pc; // <--- 提升 pc 作用域\nlet ms; // <--- 提升 ms 作用域\n\ndocument.addEventListener(\"keydown\", (e) => {\n  if (e.code === \"Space\" && !isRecording) {\n    e.preventDefault();\n    isRecording = true;\n    if (micTrack) micTrack.enabled = true;\n    appendStatusLog(\"🎤 開始收音\");\n  }\n});\n\ndocument.addEventListener(\"keyup\", (e) => {\n  if (e.code === \"Space\" && isRecording) {\n    e.preventDefault();\n    isRecording = false;\n    if (micTrack) micTrack.enabled = false;\n    appendStatusLog(\"🛑 停止收音\");\n  }\n});\n\nfunction appendStatusLog(text) {\n  const log = document.getElementById(\"statusLog\");\n  const line = document.createElement(\"div\");\n  const timestamp = `[${new Date().toLocaleTimeString(\"zh-TW\", { hour12: false })}] `;\n  if (text.includes(\"<pre>\")) {\n    line.innerHTML = timestamp + text;\n  } else {\n    line.textContent = timestamp + text;\n  }\n  log.appendChild(line);\n  log.scrollTop = log.scrollHeight;\n}\n\nasync function init() {\n  const EPHEMERAL_KEY = \"{{ $json.client_secret.value }}\";\n  pc = new RTCPeerConnection(); // <--- 賦值給全局 pc\n\n  const audioEl = document.createElement(\"audio\");\n  audioEl.autoplay = true;\n  pc.ontrack = e => audioEl.srcObject = e.streams[0];\n\n  try {\n    ms = await navigator.mediaDevices.getUserMedia({ audio: true }); // <--- 賦值給全局 ms\n    micTrack = ms.getTracks()[0];\n    micTrack.enabled = false;\n    pc.addTrack(micTrack);\n  } catch (err) {\n    appendStatusLog(`❌ 無法取得麥克風權限: ${err.message}`);\n    return;\n  }\n\n  dc = pc.createDataChannel(\"oai-events\");\n  dc.addEventListener(\"message\", (e) => {\n    handleResponse(e);\n  });\n\n  dc.onopen = () => appendStatusLog(\"🔗 DataChannel 已開啟\");\n  dc.onclose = () => appendStatusLog(\"🚪 DataChannel 已關閉 (外部事件或 EndSession)\");\n\n\n  try {\n    const offer = await pc.createOffer();\n    await pc.setLocalDescription(offer);\n\n    const baseUrl = \"https://api.openai.com/v1/realtime\";\n    const model = \"gpt-4o-realtime-preview-2024-12-17\";\n    const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {\n      method: \"POST\",\n      body: offer.sdp,\n      headers: {\n        Authorization: `Bearer ${EPHEMERAL_KEY}`,\n        \"Content-Type\": \"application/sdp\"\n      },\n    });\n\n    if (!sdpResponse.ok) {\n        const errorText = await sdpResponse.text();\n        throw new Error(`SDP 交換失敗: ${sdpResponse.status} ${errorText}`);\n    }\n\n    const answer = {\n      type: \"answer\",\n      sdp: await sdpResponse.text(),\n    };\n    await pc.setRemoteDescription(answer);\n    appendStatusLog(\"🚀 Realtime 連線已建立\");\n\n  } catch (err) {\n    appendStatusLog(`❌ 初始化 Realtime 連線失敗: ${err.message}`);\n  }\n}\n\nfunction handleResponse(e) {\n  const obj = JSON.parse(e.data);\n  appendStatusLog(`📥 Received event: ${obj.type}`);\n\n  if (obj.type === 'response.audio_transcript.done') {\n    appendStatusLog(`🤖 AI 最終語音稿: ${obj.transcript}`);\n    document.querySelector('.curMsg').innerHTML = \"\";\n    document.querySelector('.messages').innerHTML += `<div class='msg'>AI: ${obj.transcript}</div><br/>`;\n  }\n\n  if (obj.type === 'conversation.item.input_audio_transcription.completed') {\n    appendStatusLog(`👤 使用者最終語音稿: ${obj.transcript}`);\n    document.querySelector('.curMsg').innerHTML = \"\";\n    document.querySelector('.messages').innerHTML += `<div class='msgUsr'>User: ${obj.transcript}</div><br/>`;\n  }\n\n  if (obj.type === 'response.audio_transcript.delta' || obj.type === 'conversation.item.input_audio_transcription.delta') {\n    document.querySelector('.curMsg').innerHTML += obj.delta;\n  }\n\n  if (obj.type === \"response.function_call_arguments.done\") {\n    appendStatusLog(`🧪 function_call_arguments.done 的完整物件：<pre>${JSON.stringify(obj, null, 2)}</pre>`);\n\n    const toolName = obj.name;\n    const argsStr = obj.arguments;\n    const callIdForTool = obj.call_id;\n    let args;\n\n    try {\n      args = JSON.parse(argsStr);\n    } catch (parseError) {\n      appendStatusLog(`❌ 解析 arguments 失敗: ${parseError.message}`);\n      args = {};\n      if (dc && dc.readyState === \"open\") {\n        dc.send(JSON.stringify({\n          type: \"conversation.item.create\",\n          item: {\n            type: \"function_call_output\",\n            call_id: callIdForTool,\n            output: JSON.stringify({ error: `Failed to parse arguments: ${parseError.message}` })\n          }\n        }));\n      }\n      return;\n    }\n\n    appendStatusLog(`📞 GPT 要呼叫工具：${toolName}，參數：${argsStr}`);\n\n    async function fakeKYCFunction(id) {\n        const itemsString = `{{ JSON.stringify($(\"Google Sheets\").all()) }}`;\n        let items = [];\n        try {\n            items = JSON.parse(itemsString);\n            if (!Array.isArray(items)) throw new Error(\"Google Sheets data is not an array.\");\n        } catch (err) {\n            appendStatusLog(`❌ 解析 Google Sheets 資料失敗: ${err.message}`);\n            return { id, error: true, message: `無法讀取 KYC 資料來源: ${err.message}` };\n        }\n\n        try {\n          if (!id) throw new Error(\"KYC 查詢請提供 id\");\n          const rows = items.map(item => item.json || item);\n          const matched = rows.find(row => String(row.id).trim() === String(id).trim());\n\n          if (!matched) {\n            throw new Error(`找不到 ID 為 ${id} 的 KYC 資料`);\n          }\n          return {\n            id: matched.id,\n            name: matched[\"姓名\"], \n            school: matched[\"就讀國小\"],\n            hobby: matched[\"興趣\"],\n            siblings: matched[\"幾個兄弟姊妹\"],\n            info: \"使用者 KYC 資料成功取得\"\n          };\n        } catch (err) {\n          return { id, error: true, message: err.message };\n        }\n    }\n\n    async function fakeInfoSender(id, intention) { // 如果您還需要這個工具\n      appendStatusLog(`ℹ️ 模擬 info_sender: id=${id}, intention=${intention}`);\n      return { id, status: \"sent\", intention, message: \"資訊已模擬發送\" };\n    }\n\n    (async () => {\n      let resultForAI = {}; // 初始化，確保所有分支都有賦值\n\n      try {\n        if (toolName === \"KYC_info_retriever\") {\n          resultForAI = await fakeKYCFunction(args.id);\n        } else if (toolName === \"SaveData\") {\n          appendStatusLog(`➡️ 準備將數據發送到 n8n 以執行 SaveData...`);\n          if (!args.id || !args.intention || !args.intention_classified) {\n            const missingParams = [];\n            if (!args.id) missingParams.push(\"id\");\n            if (!args.intention) missingParams.push(\"intention\");\n            if (!args.intention_classified) missingParams.push(\"intention_classified\");\n            const errorMessage = `SaveData 缺少必要參數: ${missingParams.join(\", \")}`;\n            appendStatusLog(`❌ ${errorMessage}`);\n            resultForAI = { error: true, message: errorMessage };\n          } else {\n            const saveDataPayload = {\n              id: args.id,\n              intention: args.intention,\n              intention_classified: args.intention_classified\n            };\n            const n8nWebhookUrl = \"https://mmbcolab.app.n8n.cloud/webhook/SaveData\"; // 使用生產 URL\n            try {\n              const response = await fetch(n8nWebhookUrl, {\n                method: \"POST\",\n                headers: { \"Content-Type\": \"application/json\" },\n                body: JSON.stringify(saveDataPayload),\n              });\n              if (!response.ok) {\n                const errorText = await response.text();\n                appendStatusLog(`❌ n8n Webhook 錯誤: ${response.status} - ${errorText}`);\n                resultForAI = { error: true, message: `n8n Webhook 處理失敗: ${response.status}` };\n              } else {\n                appendStatusLog(`✅ 數據已成功發送到 n8n Webhook.`);\n                resultForAI = {\n                  status: \"success\",\n                  message: \"資料已成功記錄。\",\n                  details_sent_to_n8n: saveDataPayload\n                };\n              }\n            } catch (networkError) {\n              appendStatusLog(`❌ 發送數據到 n8n Webhook 時網絡錯誤: ${networkError.message}`);\n              resultForAI = { error: true, message: `無法連接到 n8n 服務: ${networkError.message}` };\n            }\n          }\n        } else if (toolName === \"EndSession\") {\n          appendStatusLog(\"🔄 正在執行 EndSession 工具...\");\n\n          // 嘗試向 AI 返回工具執行成功的消息 (在關閉 dc 之前)\n          if (dc && dc.readyState === \"open\") {\n            dc.send(JSON.stringify({\n              type: \"conversation.item.create\",\n              item: {\n                type: \"function_call_output\",\n                call_id: callIdForTool,\n                output: JSON.stringify({ status: \"session_ended\", message: \"Session termination initiated by EndSession tool.\" })\n              }\n            }));\n            appendStatusLog(\"📤 已嘗試回傳 EndSession 工具結果給 Assistant\");\n          } else {\n            appendStatusLog(\"⚠️ DataChannel 未開啟，無法回傳 EndSession 工具結果給 Assistant\");\n          }\n          \n          // 關閉 DataChannel\n          if (dc && dc.readyState === \"open\") { // 再次檢查，以防上面發送時狀態改變\n            dc.close();\n            appendStatusLog(\"🚪 DataChannel 已主動關閉 (by EndSession)\");\n          } else if (dc) {\n            appendStatusLog(`🚪 DataChannel 狀態: ${dc.readyState} (未主動關閉 by EndSession)`);\n          }\n\n\n          // 關閉 RTCPeerConnection\n          if (pc) {\n            pc.close();\n            appendStatusLog(\"🔌 RTCPeerConnection 已主動關閉 (by EndSession)\");\n          }\n\n          // 停止本地媒體軌道\n          if (ms && typeof ms.getTracks === 'function') {\n            ms.getTracks().forEach(track => track.stop());\n            appendStatusLog(\"🎤 本地媒體軌道 (ms) 已停止 (by EndSession)\");\n          } else if (micTrack && typeof micTrack.stop === 'function') {\n            micTrack.stop();\n            appendStatusLog(\"🎤 本地媒體軌道 (micTrack) 已停止 (by EndSession)\");\n          }\n          \n          appendStatusLog(\"🏁 服務結束 (EndSession tool 執行完畢)\");\n          resultForAI = { status: \"session_ended_locally\", message: \"Local resources released.\" }; // 這個結果主要用於本地日誌，因為 dc 可能已關閉\n\n          // 可選：檢查 WebRTC 連接狀態，用於調試\n          if (pc && (pc.connectionState === \"disconnected\" ||\n              pc.connectionState === \"closed\" ||\n              pc.connectionState === \"failed\")) {\n            appendStatusLog(\"✅ WebRTC 連接狀態確認：已中斷/關閉。\");\n          } else if (pc) {\n            appendStatusLog(`⚠️ WebRTC 連接狀態: ${pc.connectionState} (可能未立即完全關閉)`);\n          }\n\n        } else { // 處理未知工具\n          appendStatusLog(`❓ 未知的工具名稱: ${toolName}`);\n          resultForAI = { error: true, message: `未知的工具名稱: ${toolName}`, tool_name: toolName };\n        }\n\n        // --- 向 AI Assistant 回傳工具執行結果 (除了 EndSession，它已在內部處理) ---\n        if (toolName !== \"EndSession\") {\n          appendStatusLog(`🛠 ${toolName} 工具執行結果 (準備回傳給AI)：${JSON.stringify(resultForAI)}`);\n          if (dc && dc.readyState === \"open\") {\n            dc.send(JSON.stringify({\n              type: \"conversation.item.create\",\n              item: {\n                type: \"function_call_output\",\n                call_id: callIdForTool,\n                output: JSON.stringify(resultForAI)\n              }\n            }));\n            appendStatusLog(`📤 已回傳 ${toolName} 工具結果 (call_id: ${callIdForTool}) 給 Assistant`);\n          } else {\n            appendStatusLog(`❌ DataChannel 未開啟，無法回傳 ${toolName} 工具結果 (call_id: ${callIdForTool})`);\n          }\n        }\n\n      } catch (toolExecutionError) {\n        appendStatusLog(`❌ 工具執行或回傳時發生嚴重錯誤: ${toolExecutionError.message}. Stack: ${toolExecutionError.stack}`);\n        if (dc && dc.readyState === \"open\") { // 仍然嘗試通過開放的 dc 回傳錯誤\n          dc.send(JSON.stringify({\n            type: \"conversation.item.create\",\n            item: {\n              type: \"function_call_output\",\n              call_id: callIdForTool,\n              output: JSON.stringify({ error: true, message: `工具執行期間發生內部錯誤: ${toolExecutionError.message}` })\n            }\n          }));\n          appendStatusLog(`📤 已回傳工具執行嚴重錯誤 (call_id: ${callIdForTool}) 給 Assistant`);\n        }\n      }\n    })();\n  }\n\n  if (obj.type === \"response.output_item.done\") {\n    const content = obj.content?.text;\n    if (content) {\n      document.querySelector('.curMsg').innerHTML = \"\";\n      document.querySelector('.messages').innerHTML += `<div class='msg'>AI: ${content}</div><br/>`;\n      appendStatusLog(`🗣️ AI 最終回應內容: ${content}`);\n    }\n  }\n\n  if (obj.type === \"output_audio_buffer.stopped\"){\n    // 根據您的流程決定這裡是否需要操作\n  }\n\n  if (obj.type === \"error\") {\n    appendStatusLog(`❌ 發生 API 錯誤：<pre>${JSON.stringify(obj, null, 2)}</pre>`);\n  }\n}\n\ninit().catch(err => {\n  appendStatusLog(`❌ 初始化過程中發生未捕獲的錯誤: ${err.message}`);\n});\n\n</script>\n</body>\n</html>"
+        },
+        "type": "n8n-nodes-base.html",
+        "typeVersion": 1.2,
+        "position": [
+          860,
+          0
+        ],
+        "id": "ae81e88e-87cf-4156-9aa1-8c84fa90cb2e",
+        "name": "HTML"
+      },
+      {
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "={{ $json.html }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1160,
+          0
+        ],
+        "id": "ba634dcf-2c5c-4795-bdb4-64cce43920f9",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE",
+            "mode": "list",
+            "cachedResultName": "CaRay_Database",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "工作表1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yqU17PotNQNc7J1XOJaizkJ9a8I4WvYTQOPILLf0ueE/edit#gid=0"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.6,
+        "position": [
+          220,
+          0
+        ],
+        "id": "2ef172a9-e160-4efe-b0a2-cf684aca7149",
+        "name": "Google Sheets",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "fHa95vTbuJa2sg59",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "content": "## 打開網站觸發節點\n",
+          "height": 220,
+          "width": 220
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          -100,
+          -80
+        ],
+        "id": "ca7c13c1-3607-4039-8f7b-5f2bd6088d53",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "content": "## 讀取資料\n串接Google Sheet讀取KYC要驗證的資料\n\n",
+          "height": 260,
+          "width": 220
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          160,
+          -100
+        ],
+        "id": "041a54ec-4331-4c37-a9f2-5f726a0e725e",
+        "name": "Sticky Note1"
+      },
+      {
+        "parameters": {
+          "content": "## 呼叫OpenAI Realtime API\nbody 包含想要語音客服執行的步驟\n\n",
+          "height": 260,
+          "width": 320
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          420,
+          -100
+        ],
+        "id": "5f1091ab-e6ed-467a-82e5-06dd422a47a5",
+        "name": "Sticky Note2"
+      },
+      {
+        "parameters": {
+          "content": "## 將對話及狀態顯示在網頁上\n網頁上會有console log, response status, 對話紀錄, ...\n",
+          "height": 300
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          800,
+          -120
+        ],
+        "id": "4e268267-e223-43e3-af2a-b8cf2af066a2",
+        "name": "Sticky Note3"
+      }
+    ],
+    "connections": {
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "HTML",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Google Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTML": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Sheets": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {},
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "443d770b8fbd0d03299451806f3877dce0456e3ee5aa3f8ac4c390b5cf216dee"
+    }
+  }
